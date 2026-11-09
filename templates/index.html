@@ -1,19 +1,155 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emotion Detector</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f1e8">
+    <meta name="description" content="A local, explainable emotion detector for English text.">
+    <title>Emotion Detector · read between the lines</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
-    <h1>Emotion Detector</h1>
-    <form action="/emotionDetector" method="get">
-        <label for="textToAnalyze">Enter text:</label>
-        <input type="text" id="textToAnalyze" name="textToAnalyze">
-        <button type="submit">Analyze</button>
-    </form>
-</body>
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none">
+                    <path d="M5 16c3.2-6 7-9 11-9s7.8 3 11 9c-3.2 6-7 9-11 9S8.2 22 5 16Z" stroke="currentColor" stroke-width="1.7"/>
+                    <circle cx="16" cy="16" r="4.2" stroke="currentColor" stroke-width="1.7"/>
+                    <circle cx="16" cy="16" r="1.6" fill="currentColor"/>
+                </svg>
+            </span>
+            <span class="brand-copy">
+                <strong>Emotion Lens</strong>
+                <small>text · emotion · clarity</small>
+            </span>
+        </a>
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="#how-it-works">How it works</a>
+            <span class="local-badge"><i></i> Runs locally</span>
+        </nav>
+    </header>
 
+    <main class="shell">
+        <section class="hero">
+            <p class="eyebrow"><span>NLP playground</span> No API key · no tracking</p>
+            <h1>Read between<br><em>the lines.</em></h1>
+            <p class="lede">
+                Paste a sentence and see which emotion sits underneath it. Five signals,
+                one dominant feeling, and a confidence score — all computed on this server.
+            </p>
+        </section>
+
+        <section class="workspace" aria-label="Emotion analysis">
+            <form id="analyzeForm" class="input-panel" method="get" action="/emotionDetector">
+                <div class="panel-head">
+                    <div>
+                        <span class="panel-kicker">01 · Your text</span>
+                        <h2>What's on your mind?</h2>
+                    </div>
+                    <span class="char-count"><span id="charCount">0</span>/5000</span>
+                </div>
+
+                <label class="sr-only" for="textToAnalyze">Text to analyze</label>
+                <textarea id="textToAnalyze" name="textToAnalyze" maxlength="5000"
+                    placeholder="I am really excited about this — I have been waiting all year…"
+                    spellcheck="true" required>{{ text }}</textarea>
+
+                <div class="sample-row" aria-label="Sample sentences">
+                    <span>Try:</span>
+                    <button type="button" class="sample" data-text="I am absolutely thrilled about this — it is the best news I have had all year!">thrilled</button>
+                    <button type="button" class="sample" data-text="I am furious. They lost my booking and nobody even apologized.">furious</button>
+                    <button type="button" class="sample" data-text="I feel really anxious about the interview tomorrow. What if everything goes wrong?">anxious</button>
+                    <button type="button" class="sample" data-text="That was disgusting. I never want to eat there again.">disgusted</button>
+                    <button type="button" class="sample" data-text="I am so sad about this. I really hoped it would work out.">sad</button>
+                </div>
+
+                <button id="submitBtn" class="analyze-button" type="submit">
+                    <span class="button-label">Analyze emotion</span>
+                    <span class="button-arrow" aria-hidden="true">→</span>
+                </button>
+                <p class="privacy-line">Your text is sent only to this app and is not stored.</p>
+                <p id="formError" class="form-error" role="alert" hidden></p>
+            </form>
+
+            <section id="resultPanel" class="result-panel is-empty" aria-live="polite" aria-busy="false">
+                <div id="resultEmpty" class="result-empty">
+                    <span class="spectrum" aria-hidden="true">
+                        <i></i><i></i><i></i><i></i><i></i>
+                    </span>
+                    <span class="panel-kicker">02 · The reading</span>
+                    <h2>A feeling will appear here.</h2>
+                    <p>Submit a sentence to see the dominant emotion and how the five scores compare.</p>
+                </div>
+
+                <div id="resultData" hidden>
+                    <span class="panel-kicker">02 · The reading</span>
+                    <div class="dominant">
+                        <span id="dominantEmoji" class="dominant-emoji" aria-hidden="true">😐</span>
+                        <div>
+                            <span class="dominant-label">Dominant emotion</span>
+                            <h2 id="dominantName">Neutral</h2>
+                            <p id="confidenceText">0% confidence</p>
+                        </div>
+                    </div>
+
+                    <div class="bars" aria-label="Emotion scores">
+                        <div class="bar-row" data-emotion="anger">
+                            <div class="bar-label"><span>Anger</span><strong data-value>0%</strong></div>
+                            <div class="bar-track"><i class="bar-fill"></i></div>
+                        </div>
+                        <div class="bar-row" data-emotion="disgust">
+                            <div class="bar-label"><span>Disgust</span><strong data-value>0%</strong></div>
+                            <div class="bar-track"><i class="bar-fill"></i></div>
+                        </div>
+                        <div class="bar-row" data-emotion="fear">
+                            <div class="bar-label"><span>Fear</span><strong data-value>0%</strong></div>
+                            <div class="bar-track"><i class="bar-fill"></i></div>
+                        </div>
+                        <div class="bar-row" data-emotion="joy">
+                            <div class="bar-label"><span>Joy</span><strong data-value>0%</strong></div>
+                            <div class="bar-track"><i class="bar-fill"></i></div>
+                        </div>
+                        <div class="bar-row" data-emotion="sadness">
+                            <div class="bar-label"><span>Sadness</span><strong data-value>0%</strong></div>
+                            <div class="bar-track"><i class="bar-fill"></i></div>
+                        </div>
+                    </div>
+
+                    <p class="result-note" id="wordCount">0 words analyzed</p>
+                </div>
+            </section>
+        </section>
+
+        <section id="how-it-works" class="how">
+            <div class="how-heading">
+                <span class="panel-kicker">Under the hood</span>
+                <h2>Small model.<br>Clear reasoning.</h2>
+            </div>
+            <div class="how-grid">
+                <article>
+                    <span>01</span>
+                    <h3>Tokenize</h3>
+                    <p>The sentence is lowercased and split into words, keeping contractions such as “don't” intact.</p>
+                </article>
+                <article>
+                    <span>02</span>
+                    <h3>Score</h3>
+                    <p>A curated emotion lexicon assigns weights, while intensifiers, diminishers and negations adjust them.</p>
+                </article>
+                <article>
+                    <span>03</span>
+                    <h3>Normalize</h3>
+                    <p>Positive weights become a five-way distribution. The highest share is the dominant emotion.</p>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p><strong>Emotion Lens</strong> · a Flask + vanilla JS demo</p>
+        <p>Built by <a href="https://github.com/BennyLinntu">Benny Lin</a> · <a href="/health">health</a></p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
 </html>
